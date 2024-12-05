@@ -53,7 +53,7 @@ int main()
     
     //scale
     int user_input;
-    printf("Give a value between 4 and 10/n");
+    printf("Give a value between 4 and 10\n");
     scanf("%d", &user_input);
     int scaledValue = scale(user_input);
     
@@ -61,7 +61,7 @@ int main()
     FILE *file2;
     int j;
     char textfileInput[100];
-    printf("What is the name of the text file you want to open?/n");
+    printf("What is the name of the text file you want to open?\n");
     scanf("%s" , &textfileInput);
 
     file2 = fopen(textfileInput, "r");
@@ -135,11 +135,11 @@ int main()
  for (int k = 0; k < size; k++) 
  {
     int asciiValue = (int)TextFileArray[k];
-    int xValue = asciiValue + offset;
+    int xValue = (asciiValue + offset)*scaledValue;
 
     if (k > 0)  
     {
-        xValue += spacing;
+        xValue += (spacing*scaledValue);
     }
 
 
@@ -147,24 +147,6 @@ int main()
     SendCommands(buffer);
     offset += spacing;
  }
-    /*sprintf (buffer, "G0 X-13.41849 Y0.000\n");
-    SendCommands(buffer);
-    sprintf (buffer, "S1000\n");
-    SendCommands(buffer);
-    sprintf (buffer, "G1 X-13.41849 Y-4.28041\n");
-    SendCommands(buffer);
-    sprintf (buffer, "G1 X-13.41849 Y0.0000\n");
-    SendCommands(buffer);
-    sprintf (buffer, "G1 X-13.41089 Y4.28041\n");
-    SendCommands(buffer);
-    sprintf (buffer, "S0\n");
-    SendCommands(buffer);
-    sprintf (buffer, "G0 X-7.17524 Y0\n");
-    SendCommands(buffer);
-    sprintf (buffer, "S1000\n");
-    SendCommands(buffer);
-    sprintf (buffer, "G0 X0 Y0\n");
-    SendCommands(buffer);*/
 
     // Before we exit the program we need to close the COM port
     CloseRS232Port();
