@@ -50,16 +50,18 @@ int main()
 
     }
     fclose(file);
-
+    
+    //scale
     int user_input;
-    printf("Give a value between 4 and 10");
+    printf("Give a value between 4 and 10/n");
     scanf("%d", &user_input);
     int scaledValue = scale(user_input);
-
+    
+    //opening file 2 from user input
     FILE *file2;
     int j;
     char textfileInput[100];
-    printf("What is the name of the text file you want to open?");
+    printf("What is the name of the text file you want to open?/n");
     scanf("%s" , &textfileInput);
 
     file2 = fopen(textfileInput, "r");
@@ -72,10 +74,10 @@ int main()
     }
     while ((j = fgetc(file2)) != EOF) 
     {
-        // Ignore non-alphabet characters
+        // Ignores non alphabet characters
         if (j == '\n' || j == '\r') continue;
 
-        // Resize the dynamic array to hold one more character
+        // changes size of array
         char *temp = realloc(TextFileArray, (size + 1) * sizeof(char));
         if (temp == NULL) 
         {
@@ -92,19 +94,8 @@ int main()
     }
     fclose(file2);
 
-    /*int k;
-    for ( k = 0 ; k<size ; k++)
-    {
-        printf("%c\n", TextFileArray[i]);
 
-    }*/
    TextFileArray = NULL;
-
-    
-
-
-    
-
 
     //char mode[]= {'8','N','1',0};
     char buffer[100];
@@ -138,9 +129,24 @@ int main()
     sprintf (buffer, "S0\n");
     SendCommands(buffer);
 
-
+    int offset = 0;
+    int spacing = 5;
     // These are sample commands to draw out some information - these are the ones you will be generating.
+ for (int k = 0; k < size; k++) 
+ {
+    int asciiValue = (int)TextFileArray[k];
+    int xValue = asciiValue + offset;
 
+    if (k > 0)  
+    {
+        xValue += spacing;
+    }
+
+
+    sprintf(buffer, "G01 X%d Y%d ; Character: %c (ASCII: %d)\n", asciiValue, asciiValue, TextFileArray[k], asciiValue);
+    SendCommands(buffer);
+    offset += spacing;
+ }
     /*sprintf (buffer, "G0 X-13.41849 Y0.000\n");
     SendCommands(buffer);
     sprintf (buffer, "S1000\n");
