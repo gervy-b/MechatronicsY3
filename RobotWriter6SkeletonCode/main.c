@@ -9,8 +9,102 @@
 
 void SendCommands (char *buffer );
 
+struct textfile
+{
+
+    int Num1;
+    int Num2;
+    int Num3;
+    
+};   
+
+int scale(int user_input)
+{
+        int scaledValue = user_input/18;
+        return scaledValue;
+};
+
+
 int main()
 {
+    //opening file1 and initilising array
+    char *TextFileArray = NULL;
+    int size = 0;
+
+    struct textfile FileArray[1027];
+    FILE *file;
+    int i;
+
+
+    file = fopen ("SingleStrokeFont.txt", "r");
+    if (file == NULL)
+    {
+        printf("Error, cannot open file.\n");
+        return 1;
+
+    }
+
+    for ( i = 0 ; i<10 ; i++)
+    {
+        fscanf(file,"%d %d %d ", &FileArray[i].Num1, &FileArray[i].Num2, &FileArray[i].Num3);
+
+    }
+    fclose(file);
+
+    int user_input;
+    printf("Give a value between 4 and 10");
+    scanf("%d", &user_input);
+    int scaledValue = scale(user_input);
+
+    FILE *file2;
+    int j;
+    char textfileInput[100];
+    printf("What is the name of the text file you want to open?");
+    scanf("%s" , &textfileInput);
+
+    file2 = fopen(textfileInput, "r");
+
+    if (file2 == NULL)
+    {
+        printf("Error, cannot open file.\n");
+        return 1;
+
+    }
+    while ((j = fgetc(file2)) != EOF) 
+    {
+        // Ignore non-alphabet characters
+        if (j == '\n' || j == '\r') continue;
+
+        // Resize the dynamic array to hold one more character
+        char *temp = realloc(TextFileArray, (size + 1) * sizeof(char));
+        if (temp == NULL) 
+        {
+            printf("Error allocating memory");
+            TextFileArray = NULL;
+            fclose(file2);
+            return 1;
+        }
+        TextFileArray = temp;
+
+        TextFileArray[size] = j;
+        size++;
+        
+    }
+    fclose(file2);
+
+    /*int k;
+    for ( k = 0 ; k<size ; k++)
+    {
+        printf("%c\n", TextFileArray[i]);
+
+    }*/
+   TextFileArray = NULL;
+
+    
+
+
+    
+
 
     //char mode[]= {'8','N','1',0};
     char buffer[100];
@@ -46,7 +140,8 @@ int main()
 
 
     // These are sample commands to draw out some information - these are the ones you will be generating.
-    sprintf (buffer, "G0 X-13.41849 Y0.000\n");
+
+    /*sprintf (buffer, "G0 X-13.41849 Y0.000\n");
     SendCommands(buffer);
     sprintf (buffer, "S1000\n");
     SendCommands(buffer);
@@ -63,7 +158,7 @@ int main()
     sprintf (buffer, "S1000\n");
     SendCommands(buffer);
     sprintf (buffer, "G0 X0 Y0\n");
-    SendCommands(buffer);
+    SendCommands(buffer);*/
 
     // Before we exit the program we need to close the COM port
     CloseRS232Port();
