@@ -5,10 +5,11 @@
 #include "rs232.h"
 #include "serial.h"
 
-#define bdrate 115200               /* 115200 baud */
+#define bdrate 115200 
+#define FILE1_ARRAY_SIZE 1027              /* 115200 baud */
 
 void SendCommands (char *buffer );
-
+//creating structure
 struct textfile
 {
 
@@ -17,12 +18,12 @@ struct textfile
     int Num3;
     
 };   
-
-int scale(int user_input)
+//creating scale function
+float scale(float user_input)
 {
-        int scaledValue = user_input/18;
-        return scaledValue;
-};
+        float scaledValue = user_input/18;
+        return(scaledValue);
+}
 
 
 int main()
@@ -31,31 +32,54 @@ int main()
     char *TextFileArray = NULL;
     int size = 0;
 
-    struct textfile FileArray[1027];
-    FILE *file;
-    int i;
+    struct textfile File1Array[FILE1_ARRAY_SIZE];
+    FILE *file1;
+    int i=0;
 
 
-    file = fopen ("SingleStrokeFont.txt", "r");
-    if (file == NULL)
+    file1 = fopen ("SingleStrokeFont.txt", "r");
+    if (file1 == NULL)
     {
         printf("Error, cannot open file.\n");
         return 1;
 
     }
+   
+    char line[256];
 
-    for ( i = 0 ; i<10 ; i++)
+    while (fgets(line, sizeof(line), file1)) 
     {
-        fscanf(file,"%d %d %d ", &FileArray[i].Num1, &FileArray[i].Num2, &FileArray[i].Num3);
-
+        // Parse each line and store into the struct array
+        if (sscanf(line, "%d %d %d", &File1Array[i].Num1, &File1Array[i].Num2, &File1Array[i].Num3) == 3) {
+            i++; // Move to the next struct
+        } else {
+            fprintf(stderr, "Invalid line format: %s", line);
+        }
+        printf("%s",line);
     }
-    fclose(file);
-    
+    fclose(file1);
     //scale
     int user_input;
-    printf("Give a value between 4 and 10\n");
-    scanf("%d", &user_input);
-    int scaledValue = scale(user_input);
+
+     do {
+        printf("\nGive a value between 4 and 10:\n");
+        if (scanf("%d", &user_input) != 1) {
+            // Handle invalid input (non-integer)
+            printf("Invalid input. Please enter an integer.\n");
+            while (getchar() != '\n'); // Clear input buffer
+            continue;
+        }
+
+        // Check if input is out of range
+        if (user_input < 4 || user_input > 10) {
+            printf("Input value not in the range. Try again.\n");
+        }
+    } while (user_input < 4 || user_input > 10);
+
+    // Proceed with valid input
+    printf("You entered a valid value: %d\n", user_input);
+    float scaledValue = scale(user_input); // Assuming `scale` is a function
+
     
     //opening file 2 from user input
     FILE *file2;
@@ -82,20 +106,19 @@ int main()
         if (temp == NULL) 
         {
             printf("Error allocating memory");
-            TextFileArray = NULL;
+            free(TextFileArray); // 
             fclose(file2);
             return 1;
         }
         TextFileArray = temp;
+        
 
         TextFileArray[size] = j;
         size++;
-        
+        printf("\nvalue read from file is %d\n",TextFileArray[size - 1]);
     }
     fclose(file2);
 
-
-   TextFileArray = NULL;
 
     //char mode[]= {'8','N','1',0};
     char buffer[100];
@@ -129,24 +152,53 @@ int main()
     sprintf (buffer, "S0\n");
     SendCommands(buffer);
 
-    int offset = 0;
-    int spacing = 5;
+    float xOffset = 0;  // Horizontal offset
+    float yOffset = 0;  // Vertical offset
+    float lineSpacing = 10;
+    float charSpacing = 5;  // Distance between lines
+    float maxLineWidth = 100;
+    
     // These are sample commands to draw out some information - these are the ones you will be generating.
- for (int k = 0; k < size; k++) 
- {
-    int asciiValue = (int)TextFileArray[k];
-    int xValue = (asciiValue + offset)*scaledValue;
-
-    if (k > 0)  
+    for (int k = 0; k < size; k++) 
     {
-        xValue += (spacing*scaledValue);
+        float asciiValue = (int)TextFileArray[k];
+        if (asciiValue == '\n' || (xOffset + charSpacing * scaledValue) >= maxLineWidth)
+        {
+            xOffset = 0;  // Reset horizontal offset
+            yOffset -= lineSpacing;  // Increase vertical offset
+            if (TextFileArray[k] == '\n') 
+            {
+                continue;
+            }
+        }
+                // Loop through each entry in the font data array
+                for (int fontline = 0; fontline < FILE1_ARRAY_SIZE; fontline++)
+                {
+                    if (File1Array[fontline].Num1 == 999 && File1Array[fontline].Num2 == asciiValue) 
+                    {
+                        int numLines = File1Array[fontline].Num3; 
+                        fontline++; // Move to the first line of G-code for this character
+                        // Output each G-code line for the character
+                        for (int line2= 0; line2 < numLines && fontline < FILE1_ARRAY_SIZE; line2++, fontline++)
+                        {
+                            float xValue = File1Array[fontline].Num1 * scaledValue + xOffset;
+                            float yValue = File1Array[fontline].Num2 * scaledValue + yOffset;
+                            const char* pen = File1Array[fontline].Num3 == 1 ? "S1000" : "S0";
+                            int gCode = File1Array[fontline].Num3 == 1 ? 1 : 0;
+                            SendCommands(pen);
+
+                            sprintf(buffer, "G%d X%.2f Y%.2f \n",gCode, xValue, yValue);
+                            //printf(pen);
+                            //SendCommands(pen);
+                            //printf("%s",buffer);
+                            SendCommands(buffer);
+                        }
+                        xOffset += charSpacing  ;
+                        break;
+                    }
+                //break;
+                }
     }
-
-
-    sprintf(buffer, "G01 X%d Y%d ; Character: %c (ASCII: %d)\n", asciiValue, asciiValue, TextFileArray[k], asciiValue);
-    SendCommands(buffer);
-    offset += spacing;
- }
 
     // Before we exit the program we need to close the COM port
     CloseRS232Port();
@@ -161,7 +213,7 @@ void SendCommands (char *buffer )
 {
     // printf ("Buffer to send: %s", buffer); // For diagnostic purposes only, normally comment out
     PrintBuffer (&buffer[0]);
-    WaitForReply();
+    //WaitForReply();
     Sleep(100); // Can omit this when using the writing robot but has minimal effect
     // getch(); // Omit this once basic testing with emulator has taken place
 }
